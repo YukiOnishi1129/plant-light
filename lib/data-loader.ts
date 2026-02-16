@@ -11,6 +11,12 @@ import { join } from "node:path";
 const CACHE_DIR = join(process.cwd(), ".cache/data");
 
 let productsCache: Product[] | null = null;
+let guidesCache: Guide[] | null = null;
+let knowledgeCache: KnowledgeArticle[] | null = null;
+
+// =============================================
+// Products
+// =============================================
 
 export interface Product {
   id: number;
@@ -63,6 +69,11 @@ export interface Product {
   is_enriched: number;
   enriched_at: string | null;
 
+  // v2追加
+  brand: string | null;
+  form_factor: string | null;
+  ai_matching_plants: string[] | null;
+
   created_at: string;
   updated_at: string;
 }
@@ -75,6 +86,71 @@ export interface ScrapedReview {
   author: string;
 }
 
+// =============================================
+// Guides
+// =============================================
+
+export interface GuideRecommendedProduct {
+  product_id: number;
+  reason: string;
+  target: string;
+}
+
+export interface GuideRequiredSpecs {
+  ppfd_range: string;
+  color_temp: string;
+  daily_hours: string;
+}
+
+export interface GuideFAQ {
+  question: string;
+  answer: string;
+}
+
+export interface Guide {
+  id: number;
+  slug: string;
+  plant_name: string;
+  title: string;
+  intro: string | null;
+  required_specs: GuideRequiredSpecs | null;
+  recommended_products: GuideRecommendedProduct[] | null;
+  setup_tips: string | null;
+  faq: GuideFAQ[] | null;
+  is_generated: number;
+  generated_at: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+// =============================================
+// Knowledge Articles
+// =============================================
+
+export interface KnowledgeFAQ {
+  question: string;
+  answer: string;
+}
+
+export interface KnowledgeArticle {
+  id: number;
+  slug: string;
+  topic: string;
+  title: string;
+  summary: string | null;
+  body: string | null;
+  faq: KnowledgeFAQ[] | null;
+  related_products: number[] | null;
+  is_generated: number;
+  generated_at: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+// =============================================
+// Loader
+// =============================================
+
 function loadJson<T>(filename: string): T[] {
   const filePath = join(CACHE_DIR, filename);
   if (!existsSync(filePath)) {
@@ -84,6 +160,8 @@ function loadJson<T>(filename: string): T[] {
   const content = readFileSync(filePath, "utf-8");
   return JSON.parse(content) as T[];
 }
+
+// --- Products ---
 
 export async function getProducts(): Promise<Product[]> {
   if (productsCache === null) {
@@ -98,7 +176,9 @@ export async function getEnrichedProducts(): Promise<Product[]> {
   return products.filter((p) => p.is_enriched === 1);
 }
 
-export async function getProductById(id: number): Promise<Product | undefined> {
+export async function getProductById(
+  id: number
+): Promise<Product | undefined> {
   const products = await getProducts();
   return products.find((p) => p.id === id);
 }
@@ -117,6 +197,56 @@ export async function getProductsByTag(tag: string): Promise<Product[]> {
   return products.filter((p) => p.use_tags && p.use_tags.includes(tag));
 }
 
+export async function getProductsByBrand(brand: string): Promise<Product[]> {
+  const products = await getEnrichedProducts();
+  return products.filter(
+    (p) => p.brand && p.brand.toLowerCase() === brand.toLowerCase()
+  );
+}
+
+export async function getProductsByFormFactor(
+  formFactor: string
+): Promise<Product[]> {
+  const products = await getEnrichedProducts();
+  return products.filter((p) => p.form_factor === formFactor);
+}
+
+// --- Guides ---
+
+export async function getGuides(): Promise<Guide[]> {
+  if (guidesCache === null) {
+    guidesCache = loadJson<Guide>("guides.json");
+    console.log(`Loaded ${guidesCache.length} guides from cache`);
+  }
+  return guidesCache;
+}
+
+export async function getGuideBySlug(
+  slug: string
+): Promise<Guide | undefined> {
+  const guides = await getGuides();
+  return guides.find((g) => g.slug === slug);
+}
+
+// --- Knowledge Articles ---
+
+export async function getKnowledgeArticles(): Promise<KnowledgeArticle[]> {
+  if (knowledgeCache === null) {
+    knowledgeCache = loadJson<KnowledgeArticle>("knowledge.json");
+    console.log(`Loaded ${knowledgeCache.length} knowledge articles from cache`);
+  }
+  return knowledgeCache;
+}
+
+export async function getKnowledgeBySlug(
+  slug: string
+): Promise<KnowledgeArticle | undefined> {
+  const articles = await getKnowledgeArticles();
+  return articles.find((a) => a.slug === slug);
+}
+
 export function clearCache(): void {
   productsCache = null;
+  guidesCache = null;
+  knowledgeCache = null;
 }

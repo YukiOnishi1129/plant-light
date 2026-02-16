@@ -93,7 +93,11 @@ async function main() {
 
   mkdirSync(CACHE_DIR, { recursive: true });
 
-  const files = ["products.parquet"];
+  const files = [
+    "products.parquet",
+    "guides.parquet",
+    "knowledge.parquet",
+  ];
 
   const bigIntReplacer = (_key, value) => {
     if (typeof value === "bigint") {
@@ -108,9 +112,9 @@ async function main() {
       const jsonFile = file.replace(".parquet", ".json");
       const outputPath = join(CACHE_DIR, jsonFile);
       writeFileSync(outputPath, JSON.stringify(data, bigIntReplacer), "utf-8");
-      console.log(`✓ ${file} -> ${jsonFile} (${data.length} rows)`);
+      console.log(`  ${file} -> ${jsonFile} (${data.length} rows)`);
     } catch (error) {
-      console.warn(`⚠ ${file}: ${error.message}`);
+      console.warn(`  ${file}: ${error.message}`);
       const jsonFile = file.replace(".parquet", ".json");
       const outputPath = join(CACHE_DIR, jsonFile);
       writeFileSync(outputPath, "[]", "utf-8");
