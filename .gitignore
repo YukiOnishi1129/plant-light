@@ -20,6 +20,9 @@
 # production
 /build
 
+# cache (prebuild data)
+/.cache/
+
 # misc
 .DS_Store
 *.pem

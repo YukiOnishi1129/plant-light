@@ -1,0 +1,122 @@
+/**
+ * データローダー
+ *
+ * prebuild-data.mjsで生成されたJSONキャッシュからデータを読み込む。
+ * ビルド時に一度だけ読み込んでメモリにキャッシュする。
+ */
+
+import { readFileSync, existsSync } from "node:fs";
+import { join } from "node:path";
+
+const CACHE_DIR = join(process.cwd(), ".cache/data");
+
+let productsCache: Product[] | null = null;
+
+export interface Product {
+  id: number;
+  item_code: string;
+  item_name: string;
+  item_price: number;
+  item_url: string | null;
+  affiliate_url: string | null;
+  shop_name: string | null;
+  shop_code: string | null;
+  shop_url: string | null;
+  image_urls: string[] | null;
+  review_count: number;
+  review_average: number;
+  genre_id: string | null;
+  item_caption: string | null;
+  availability: number;
+  tax_flag: number;
+  sale_price: number | null;
+  ranking: number | null;
+
+  // スクレイピング情報
+  breadcrumbs: string[] | null;
+  description_text: string | null;
+  scraped_specs: Record<string, string>[] | null;
+  scraped_reviews: ScrapedReview[] | null;
+  scraped_review_count: number | null;
+  scraped_review_average: number | null;
+  is_scraped: number;
+  scraped_at: string | null;
+
+  // AI加工情報
+  wattage: string | null;
+  spectrum: string | null;
+  color_temp: string | null;
+  timer: string | null;
+  socket_type: string | null;
+  ppfd: string | null;
+  lux: string | null;
+  lifespan: string | null;
+  dimming: string | null;
+  size: string | null;
+  ai_summary: string | null;
+  ai_good_points: string[] | null;
+  ai_bad_points: string[] | null;
+  ai_recommend_for: string[] | null;
+  ai_review_summary: string | null;
+  categories: string[] | null;
+  use_tags: string[] | null;
+  is_enriched: number;
+  enriched_at: string | null;
+
+  created_at: string;
+  updated_at: string;
+}
+
+export interface ScrapedReview {
+  rating: number;
+  title: string;
+  text: string;
+  date: string;
+  author: string;
+}
+
+function loadJson<T>(filename: string): T[] {
+  const filePath = join(CACHE_DIR, filename);
+  if (!existsSync(filePath)) {
+    console.warn(`Cache file not found: ${filePath}`);
+    return [];
+  }
+  const content = readFileSync(filePath, "utf-8");
+  return JSON.parse(content) as T[];
+}
+
+export async function getProducts(): Promise<Product[]> {
+  if (productsCache === null) {
+    productsCache = loadJson<Product>("products.json");
+    console.log(`Loaded ${productsCache.length} products from cache`);
+  }
+  return productsCache;
+}
+
+export async function getEnrichedProducts(): Promise<Product[]> {
+  const products = await getProducts();
+  return products.filter((p) => p.is_enriched === 1);
+}
+
+export async function getProductById(id: number): Promise<Product | undefined> {
+  const products = await getProducts();
+  return products.find((p) => p.id === id);
+}
+
+export async function getProductsByCategory(
+  category: string
+): Promise<Product[]> {
+  const products = await getEnrichedProducts();
+  return products.filter(
+    (p) => p.categories && p.categories.includes(category)
+  );
+}
+
+export async function getProductsByTag(tag: string): Promise<Product[]> {
+  const products = await getEnrichedProducts();
+  return products.filter((p) => p.use_tags && p.use_tags.includes(tag));
+}
+
+export function clearCache(): void {
+  productsCache = null;
+}
