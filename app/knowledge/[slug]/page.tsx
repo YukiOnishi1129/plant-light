@@ -3,9 +3,39 @@ import {
   getKnowledgeBySlug,
   getProductById,
 } from "@/lib/data-loader";
+import type { Metadata } from "next";
 import type { KnowledgeArticle } from "@/lib/data-loader";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ slug: string }>;
+}): Promise<Metadata> {
+  const { slug } = await params;
+  const article = await getKnowledgeBySlug(slug);
+  if (!article) return {};
+
+  const title = article.title;
+  const description = article.summary
+    ? article.summary.slice(0, 120) + "…"
+    : `${article.topic}について詳しく解説。植物育成ライトの基礎知識を初心者向けにわかりやすく紹介します。`;
+
+  return {
+    title,
+    description,
+    openGraph: {
+      title,
+      description,
+      url: `https://plant-light.jp/knowledge/${slug}`,
+      type: "article",
+    },
+    alternates: {
+      canonical: `https://plant-light.jp/knowledge/${slug}`,
+    },
+  };
+}
 
 export async function generateStaticParams() {
   const articles = await getKnowledgeArticles();
@@ -207,6 +237,43 @@ export default async function KnowledgePage({
           </section>
         )}
       </article>
+
+      {/* 構造化データ: Article + FAQPage */}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify({
+            "@context": "https://schema.org",
+            "@type": "Article",
+            headline: article.title,
+            description: article.summary || "",
+            url: `https://plant-light.jp/knowledge/${slug}`,
+            publisher: {
+              "@type": "Organization",
+              name: "plant-light.jp",
+            },
+          }),
+        }}
+      />
+      {article.faq && article.faq.length > 0 && (
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify({
+              "@context": "https://schema.org",
+              "@type": "FAQPage",
+              mainEntity: article.faq.map((item) => ({
+                "@type": "Question",
+                name: item.question,
+                acceptedAnswer: {
+                  "@type": "Answer",
+                  text: item.answer,
+                },
+              })),
+            }),
+          }}
+        />
+      )}
     </div>
   );
 }

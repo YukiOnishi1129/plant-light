@@ -121,7 +121,55 @@ async function main() {
     }
   }
 
+  // sitemap.xml 生成
+  generateSitemap();
+
   console.log("=== Prebuild Data: Complete ===");
+}
+
+function generateSitemap() {
+  const SITE_URL = "https://plant-light.jp";
+  const now = new Date().toISOString().split("T")[0];
+
+  // キャッシュからデータ読み込み
+  const readCache = (name) => {
+    const p = join(CACHE_DIR, name);
+    if (!existsSync(p)) return [];
+    return JSON.parse(readFileSync(p, "utf-8"));
+  };
+
+  const products = readCache("products.json");
+  const guides = readCache("guides.json");
+  const knowledge = readCache("knowledge.json");
+
+  const urls = [
+    `  <url><loc>${SITE_URL}/</loc><lastmod>${now}</lastmod><changefreq>weekly</changefreq><priority>1.0</priority></url>`,
+    `  <url><loc>${SITE_URL}/privacy</loc><changefreq>yearly</changefreq><priority>0.2</priority></url>`,
+  ];
+
+  for (const g of guides) {
+    const mod = g.updated_at ? g.updated_at.split(" ")[0] : now;
+    urls.push(`  <url><loc>${SITE_URL}/guide/${g.slug}</loc><lastmod>${mod}</lastmod><changefreq>monthly</changefreq><priority>0.9</priority></url>`);
+  }
+
+  for (const a of knowledge) {
+    const mod = a.updated_at ? a.updated_at.split(" ")[0] : now;
+    urls.push(`  <url><loc>${SITE_URL}/knowledge/${a.slug}</loc><lastmod>${mod}</lastmod><changefreq>monthly</changefreq><priority>0.8</priority></url>`);
+  }
+
+  for (const p of products) {
+    const mod = p.updated_at ? p.updated_at.split(" ")[0] : now;
+    urls.push(`  <url><loc>${SITE_URL}/products/${p.id}</loc><lastmod>${mod}</lastmod><changefreq>weekly</changefreq><priority>0.6</priority></url>`);
+  }
+
+  const xml = `<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+${urls.join("\n")}
+</urlset>`;
+
+  const sitemapPath = join(__dirname, "../public/sitemap.xml");
+  writeFileSync(sitemapPath, xml, "utf-8");
+  console.log(`  sitemap.xml generated (${urls.length} URLs)`);
 }
 
 main().catch(console.error);

@@ -3,9 +3,39 @@ import {
   getGuideBySlug,
   getProductById,
 } from "@/lib/data-loader";
+import type { Metadata } from "next";
 import type { GuideRecommendedProduct } from "@/lib/data-loader";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ slug: string }>;
+}): Promise<Metadata> {
+  const { slug } = await params;
+  const guide = await getGuideBySlug(slug);
+  if (!guide) return {};
+
+  const title = `【2026年】${guide.plant_name}用育成ライトおすすめ${guide.recommended_products?.length || ""}選｜必要なPPFDと選び方`;
+  const description = guide.intro
+    ? guide.intro.slice(0, 120) + "…"
+    : `${guide.plant_name}に最適な植物育成ライトの選び方を解説。必要なPPFD・色温度・照射時間とおすすめ商品を紹介します。`;
+
+  return {
+    title,
+    description,
+    openGraph: {
+      title,
+      description,
+      url: `https://plant-light.jp/guide/${slug}`,
+      type: "article",
+    },
+    alternates: {
+      canonical: `https://plant-light.jp/guide/${slug}`,
+    },
+  };
+}
 
 export async function generateStaticParams() {
   const guides = await getGuides();
@@ -369,6 +399,27 @@ export default async function GuidePage({
             ))}
           </div>
         </section>
+      )}
+
+      {/* 構造化データ: FAQPage */}
+      {guide.faq && guide.faq.length > 0 && (
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify({
+              "@context": "https://schema.org",
+              "@type": "FAQPage",
+              mainEntity: guide.faq.map((item) => ({
+                "@type": "Question",
+                name: item.question,
+                acceptedAnswer: {
+                  "@type": "Answer",
+                  text: item.answer,
+                },
+              })),
+            }),
+          }}
+        />
       )}
     </div>
   );

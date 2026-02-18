@@ -1,7 +1,37 @@
 import { getProducts, getProductById } from "@/lib/data-loader";
+import type { Metadata } from "next";
 import type { Product } from "@/lib/data-loader";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}): Promise<Metadata> {
+  const { id } = await params;
+  const product = await getProductById(Number(id));
+  if (!product) return {};
+
+  const title = `${product.item_name}｜スペック・レビュー・口コミ`;
+  const description = product.ai_summary
+    ? product.ai_summary.slice(0, 120) + "…"
+    : `${product.item_name}のスペック・レビュー・価格情報。植物育成ライトの詳細を確認できます。`;
+
+  return {
+    title,
+    description,
+    openGraph: {
+      title,
+      description,
+      url: `https://plant-light.jp/products/${id}`,
+      images: product.image_urls?.[0] ? [product.image_urls[0]] : undefined,
+    },
+    alternates: {
+      canonical: `https://plant-light.jp/products/${id}`,
+    },
+  };
+}
 
 export async function generateStaticParams() {
   const products = await getProducts();
@@ -260,6 +290,39 @@ export default async function ProductPage({
           </p>
         </div>
       </div>
+
+      {/* 構造化データ: Product */}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify({
+            "@context": "https://schema.org",
+            "@type": "Product",
+            name: product.item_name,
+            description: product.ai_summary || product.item_name,
+            image: product.image_urls?.[0],
+            brand: product.brand
+              ? { "@type": "Brand", name: product.brand }
+              : undefined,
+            offers: {
+              "@type": "Offer",
+              price: product.item_price,
+              priceCurrency: "JPY",
+              availability: "https://schema.org/InStock",
+              url: product.affiliate_url || product.item_url,
+            },
+            ...(product.review_count > 0
+              ? {
+                  aggregateRating: {
+                    "@type": "AggregateRating",
+                    ratingValue: product.review_average,
+                    reviewCount: product.review_count,
+                  },
+                }
+              : {}),
+          }),
+        }}
+      />
     </div>
   );
 }
