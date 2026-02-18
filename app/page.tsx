@@ -1,5 +1,6 @@
 import { getProducts, getGuides, getKnowledgeArticles } from "@/lib/data-loader";
 import Link from "next/link";
+import { RakutenLink } from "@/components/rakuten-link";
 
 function formatPrice(price: number): string {
   return `¥${price.toLocaleString()}`;
@@ -208,14 +209,14 @@ export default async function Home() {
                   {/* CTA */}
                   <div className="mt-2">
                     {product.affiliate_url ? (
-                      <a
-                        href={product.affiliate_url}
-                        target="_blank"
-                        rel="noopener noreferrer"
+                      <RakutenLink
+                        url={product.affiliate_url}
+                        productId={product.id}
+                        source="ranking"
                         className="inline-block rounded bg-red-500 px-3 py-1 text-xs font-semibold text-white hover:bg-red-600"
                       >
                         楽天で価格を見る
-                      </a>
+                      </RakutenLink>
                     ) : (
                       <Link
                         href={`/products/${product.id}`}

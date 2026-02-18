@@ -6,6 +6,7 @@ import {
 import type { Metadata } from "next";
 import type { GuideRecommendedProduct } from "@/lib/data-loader";
 import Link from "next/link";
+import { RakutenLink } from "@/components/rakuten-link";
 import { notFound } from "next/navigation";
 
 export async function generateMetadata({
@@ -192,14 +193,14 @@ async function RecommendedProductCard({
         {/* CTA */}
         <div className="mt-4">
           {product.affiliate_url ? (
-            <a
-              href={product.affiliate_url}
-              target="_blank"
-              rel="noopener noreferrer"
+            <RakutenLink
+              url={product.affiliate_url}
+              productId={product.id}
+              source="guide"
               className="block rounded-lg bg-red-500 py-2.5 text-center text-sm font-bold text-white hover:bg-red-600"
             >
               楽天で価格を見る
-            </a>
+            </RakutenLink>
           ) : (
             <Link
               href={`/products/${product.id}`}

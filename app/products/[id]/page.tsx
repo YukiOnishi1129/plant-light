@@ -2,6 +2,7 @@ import { getProducts, getProductById } from "@/lib/data-loader";
 import type { Metadata } from "next";
 import type { Product } from "@/lib/data-loader";
 import Link from "next/link";
+import { RakutenLink } from "@/components/rakuten-link";
 import { notFound } from "next/navigation";
 
 export async function generateMetadata({
@@ -193,14 +194,14 @@ export default async function ProductPage({
             {/* CTA */}
             <div className="mt-4">
               {product.affiliate_url && (
-                <a
-                  href={product.affiliate_url}
-                  target="_blank"
-                  rel="noopener noreferrer"
+                <RakutenLink
+                  url={product.affiliate_url}
+                  productId={product.id}
+                  source="detail_top"
                   className="inline-flex items-center gap-2 rounded-lg bg-red-500 px-6 py-3 font-semibold text-white hover:bg-red-600"
                 >
                   🛒 楽天で価格を見る
-                </a>
+                </RakutenLink>
               )}
               <p className="mt-1 text-xs text-gray-400">
                 気になったらまずカートに入れておくと安心です
@@ -276,14 +277,14 @@ export default async function ProductPage({
         {/* 最下部CTA */}
         <div className="mt-8 rounded-lg bg-gray-50 p-4 text-center">
           {product.affiliate_url && (
-            <a
-              href={product.affiliate_url}
-              target="_blank"
-              rel="noopener noreferrer"
+            <RakutenLink
+              url={product.affiliate_url}
+              productId={product.id}
+              source="detail_bottom"
               className="inline-flex items-center gap-2 rounded-lg bg-red-500 px-6 py-3 font-semibold text-white hover:bg-red-600"
             >
               🛒 楽天で価格を見る
-            </a>
+            </RakutenLink>
           )}
           <p className="mt-2 text-xs text-gray-500">
             カートに入れれば89日以内の購入でOK。まずはカートへ！
