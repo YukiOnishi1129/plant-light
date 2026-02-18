@@ -1,6 +1,9 @@
 import type { Metadata } from "next";
+import Script from "next/script";
 import Link from "next/link";
 import "./globals.css";
+
+const GA_MEASUREMENT_ID = "G-WG9K31FYM4";
 
 const SITE_URL = "https://plant-light.jp";
 const SITE_NAME = "plant-light.jp";
@@ -37,6 +40,20 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="ja">
+      <head>
+        <Script
+          src={`https://www.googletagmanager.com/gtag/js?id=${GA_MEASUREMENT_ID}`}
+          strategy="afterInteractive"
+        />
+        <Script id="google-analytics" strategy="afterInteractive">
+          {`
+            window.dataLayer = window.dataLayer || [];
+            function gtag(){dataLayer.push(arguments);}
+            gtag('js', new Date());
+            gtag('config', '${GA_MEASUREMENT_ID}');
+          `}
+        </Script>
+      </head>
       <body>
         <header className="border-b border-gray-200 bg-white">
           <div className="mx-auto max-w-5xl px-4 py-4">
